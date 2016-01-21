@@ -80,10 +80,10 @@ class TorrentClient(Thread):
         self.daemon = True
         self.name = ipt
         session_factory = sessionmaker(bind=db.engine)
-        self.Session = scoped_session(session_factory)
-        local_session = self.Session()
+        Session = scoped_session(session_factory)
+        local_session = Session()
         self.client = local_session.query(Client).filter(Client.ipt == ipt).first()
-        self.Session.remove()
+        Session.remove()
         self.btc = TransmissionClient()
         self.btc.connect( address  = self.client.ipt,
                  port = 9091,
@@ -105,7 +105,9 @@ class TorrentClient(Thread):
         return None
 
     def update_torrent_table(self, torrents):
-        local_session = self.Session()
+        session_factory = sessionmaker(bind=db.engine)
+        Session = scoped_session(session_factory)
+        local_session = Session()
         for _t in torrents['torrents']:
             _client= local_session.query(Client).filter(Client.ipt == self.name).first()
             resq = local_session.query(Torrent).\
@@ -130,7 +132,7 @@ class TorrentClient(Thread):
                     client       = _client )
                 local_session.add(new_torrent)
                 local_session.commit()
-        self.Session.remove()
+        Session.remove()
 
     def stop(self):
         self._stop.set()
