@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 class SqlAchmemy(object):
     def __init__(self):
-        self.engine = create_engine('sqlite:///sqlalchemy_example.db')
+        self.engine = create_engine('mysql://tdcpb:tdcpb@localhost/tdcpbtorrentsdb')
         self.Model = declarative_base()
         self.Model.metadata.bind = self.engine
         DBSession = sessionmaker()
