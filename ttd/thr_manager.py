@@ -8,9 +8,9 @@ from time import sleep
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
-from app import db
-from app.models import MonitoringRequest, MonitoringStatus
-from app.BitTorrentClient import TorrentClient
+from ttd import db
+from ttd.models import MonitoringRequest, MonitoringStatus
+from ttd.BitTorrentClient import TorrentClient
 
 class ThreadManager(object):
 

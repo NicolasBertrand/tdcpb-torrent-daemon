@@ -13,8 +13,8 @@ from time import sleep
 from transmissionrpc import HTTPHandlerError, TransmissionError
 from transmissionrpc import Client as TClient
 
-from app import db
-from app.models import Client, Torrent
+from ttd import db
+from ttd.models import Client, Torrent
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
@@ -143,26 +143,4 @@ class TorrentClient(Thread):
 
 
 def main(argv):
-    if os.path.exists('.env'):
-        print('Importing environment from .env...')
-        for line in open('.env'):
-            var = line.strip().split('=')
-            if len(var) == 2:
-                os.environ[var[0]] = var[1]
-
-
-    #app = Flask(__name__)
-    app = create_app(os.getenv('FLASK_CONFIG') or 'default')
-    with app.app_context():
-        logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(message)s - %(filename)s %(funcName)s line %(lineno)d thread %(thread)d/%(threadName)s',
-                         level= logging.ERROR)
-
-
-        tc = TransmissionClient()
-        tc.connect(os.environ.get('TC_HOST'), port=9091, 
-            user=os.environ.get('TC_LOGIN') , 
-            password=os.environ.get('TC_PASS'))
-        _ts = tc.get_torrents()
-        print(json.dumps(_ts, indent=2))
-        return 0
-
+    pass

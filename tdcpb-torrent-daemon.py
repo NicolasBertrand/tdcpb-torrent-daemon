@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys, time
-from app.daemon import Daemon
-from app.thr_manager import ThreadManager
+from ttd.daemon import Daemon
+from ttd.thr_manager import ThreadManager
 
 class MyDaemon(Daemon):
         def run(self):

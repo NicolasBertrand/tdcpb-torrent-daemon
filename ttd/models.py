@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime
 from sqlalchemy import Boolean
 from sqlalchemy.orm import relationship
-from app import db
+from ttd import db
 
 class Client(db.Model):
     __tablename__ = u'client'

@@ -1,4 +1,4 @@
-from app.thr_manager import ThreadManager
+from ttd.thr_manager import ThreadManager
 
 
 
