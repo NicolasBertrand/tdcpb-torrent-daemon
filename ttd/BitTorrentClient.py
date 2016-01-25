@@ -96,13 +96,38 @@ class TorrentClient(Thread):
                 break
             torrents= self.btc.get_torrents()
             self.update_torrent_table(torrents)
+            self.search_deleted_torrents(torrents)
             sleep(5)
 
-    def search_torrent(self,torrent_hash, resq):
+    def search_hash_in_db(self,torrent_hash, resq):
         for r in resq:
             if torrent_hash == r.hash:
                 return r
         return None
+
+    def search_hash_in_torrent_client(self,torrent_hash, torrents):
+        for t in torrents['torrents']:
+            if torrent_hash == t['hash']:
+                return t
+        return None
+
+
+    def search_deleted_torrents(self,torrents):
+        session_factory = sessionmaker(bind=db.engine)
+        Session = scoped_session(session_factory)
+        local_session = Session()
+
+        _client= local_session.query(Client).filter(Client.ipt == self.name).first()
+        resq = local_session.query(Torrent).\
+                filter(Torrent.client == _client, Torrent.state != u'deleted').all()
+
+        for _r in resq:
+            if self.search_hash_in_torrent_client(_r.hash, torrents) is None:
+                # torrent deleted in client
+                _r.state = u'deleted'
+                local_session.commit()
+
+        Session.remove()
 
     def update_torrent_table(self, torrents):
         session_factory = sessionmaker(bind=db.engine)
@@ -112,7 +137,7 @@ class TorrentClient(Thread):
             _client= local_session.query(Client).filter(Client.ipt == self.name).first()
             resq = local_session.query(Torrent).\
                     filter(Torrent.client == _client).all()
-            titem = self.search_torrent(_t['hash'], resq)
+            titem = self.search_hash_in_db(_t['hash'], resq)
             if titem is not None:
                 if titem.percent_done != _t[u'progress']:
                     titem.percent_done = _t[u'progress']
