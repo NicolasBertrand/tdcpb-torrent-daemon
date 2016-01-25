@@ -9,6 +9,7 @@ import sys
 import json
 from threading import Thread, Event
 from time import sleep
+from datetime import datetime
 
 from transmissionrpc import HTTPHandlerError, TransmissionError
 from transmissionrpc import Client as TClient
@@ -97,7 +98,7 @@ class TorrentClient(Thread):
             torrents= self.btc.get_torrents()
             self.update_torrent_table(torrents)
             self.search_deleted_torrents(torrents)
-            sleep(5)
+            sleep(10)
 
     def search_hash_in_db(self,torrent_hash, resq):
         for r in resq:
@@ -143,8 +144,10 @@ class TorrentClient(Thread):
                     titem.percent_done = _t[u'progress']
                     print "progressionn updated {} {}  ".\
                             format(titem.percent_done, _t[u'progress'])
+                    titem.update = datetime.now()
                 if titem.state != _t[u'status']:
                     titem.state = _t[u'status']
+                    titem.update = datetime.now()
                     print "progressionn updated {} {}  ".\
                             format(titem.state, _t[u'status'])
                 local_session.commit()
@@ -154,6 +157,7 @@ class TorrentClient(Thread):
                     hash         = _t[u'hash'],
                     state        = _t[u'status'],
                     percent_done = _t[u'progress'],
+                    update       = datetime.now(),
                     client       = _client )
                 local_session.add(new_torrent)
                 local_session.commit()

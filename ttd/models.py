@@ -21,15 +21,17 @@ class Torrent(db.Model):
     hash           = Column(String(40))
     state          = Column(String(40))
     percent_done   = Column(Float)
+    update         = Column(DateTime, nullable=False)
     client_id      = Column(Integer, ForeignKey(u'client.id'))
     client         = relationship(Client)
 
     def __repr__(self):
-        return u'{:<16} {:<30} {:<10} {:<10}'.format(\
+        return u'{:<16} {:<30} {:<10} {:<10} {}'.format(\
                 self.client.ipt,
                 self.name[:30],
                 self.state,
-                self.percent_done)
+                self.percent_done,
+                self.update)
 
 class MonitoringRequest(db.Model):
     __tablename__ = u'monitoringrequest'
