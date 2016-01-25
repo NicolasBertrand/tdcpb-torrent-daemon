@@ -45,6 +45,13 @@ class MonitoringRequest(db.Model):
     request_date    = Column(DateTime, nullable=False)
     request_token   = Column(Boolean)
 
+    def __repr__(self):
+        return u'{} {:<16} {} ({})'.format(\
+                self.request_date,
+                self.ipt,
+                self.request_type,
+                self.request_token)
+
     @classmethod
     def start_client(cls, ipt):
         qres = db.Session.query(cls).\
@@ -92,4 +99,9 @@ class MonitoringStatus(db.Model):
     ipt           = Column(String(16), nullable=False,)
     status        = Column(String(64), nullable=False, default=u'STOP')
 
-    
+    def __repr__(self):
+        return u'{:<16} {}'.format(\
+                self.ipt,
+                self.status)
+
+   
