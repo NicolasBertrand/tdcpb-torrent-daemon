@@ -15,6 +15,7 @@ from transmissionrpc import HTTPHandlerError, TransmissionError
 from transmissionrpc import Client as TClient
 
 from ttd import db
+from ttd import logger
 from ttd.models import Client, Torrent
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
@@ -53,7 +54,7 @@ class TransmissionClient(BitTorrentClient):
         try :
            self.client =TClient( address, port, user, password)
         except TransmissionError as err:
-            raise BTCException("TransmissionError {}".format(err))
+            raise BTCexception("TransmissionError {}".format(err))
 
         self.dict_client['name']= address
 
@@ -142,14 +143,14 @@ class TorrentClient(Thread):
             if titem is not None:
                 if titem.percent_done != _t[u'progress']:
                     titem.percent_done = _t[u'progress']
-                    print "progressionn updated {} {}  ".\
-                            format(titem.percent_done, _t[u'progress'])
                     titem.update = datetime.now()
+                    logger.info( "progress: {:<30} {:7.3f}  ".\
+                            format(titem.name[:30], titem.percent_done))
                 if titem.state != _t[u'status']:
                     titem.state = _t[u'status']
                     titem.update = datetime.now()
-                    print "progressionn updated {} {}  ".\
-                            format(titem.state, _t[u'status'])
+                    logger.info("state updated {} {}  ".\
+                            format(titem.state, _t[u'status']))
                 local_session.commit()
             else:
                 new_torrent = Torrent(

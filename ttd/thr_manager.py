@@ -9,13 +9,13 @@ from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
 from ttd import db
+from ttd import logger
 from ttd.models import MonitoringRequest, MonitoringStatus
 from ttd.BitTorrentClient import TorrentClient
 
 class ThreadManager(object):
 
     def __init__(self):
-        print "coucou"
         self.thread_dict = {}
         session_factory = sessionmaker(bind=db.engine)
         self.Session = scoped_session(session_factory)
@@ -24,18 +24,17 @@ class ThreadManager(object):
         if request_type == MonitoringRequest.MRT_START:
             if mstatus.status != MonitoringStatus.MST_START:
                 if ipt in self.thread_dict:
-                    print u'hum, thread not supposed to be already started'
+                    logger.warning(u'hum, thread not supposed to be already started')
                     return "ERROR"
                 mstatus.status = MonitoringRequest.MRT_START
                 thr = TorrentClient(ipt)
                 thr.start()
-                print "Thread started for {}".format(ipt)
+                logger.info("Thread started for {}".format(ipt))
                 self.thread_dict[ipt] = thr
 
         if request_type == MonitoringRequest.MRT_STOP:
-            print "STOP thread"
             if ipt in self.thread_dict:
-                print "STOP threa(really)"
+                logger.info("STOP thread for {}".format(ipt))
                 self.thread_dict[ipt].stop()
                 self.thread_dict[ipt].join()
                 del self.thread_dict[ipt]
@@ -44,6 +43,7 @@ class ThreadManager(object):
 
 
     def start(self):
+        logger.info("Starting thread moniroring")
         try:
             while True:
                 local_session = self.Session()
@@ -51,13 +51,10 @@ class ThreadManager(object):
                         filter_by(request_token = True).all()
                 actions = []
                 for request in new_requests:
-                    print request.ipt, request.request_token
                     actions.append((request.ipt, request.request_type))
                     request.request_token = False
-                    print request.request_token
                     local_session.commit()
                 for ipt, request_type in actions:
-                    print ipt, request_type
                     mstatus = local_session.query(MonitoringStatus).\
                             filter_by(ipt = ipt).first()
                     if mstatus is not None:
