@@ -1,0 +1,9 @@
+tdcpb-torrent-daemon
+--------------------
+
+Monoitor acctive torrents transfer.
+
+install
+------
+python setup.py install
+
