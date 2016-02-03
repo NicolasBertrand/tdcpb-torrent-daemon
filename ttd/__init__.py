@@ -18,7 +18,7 @@ class SqlAchmemy(object):
 db=SqlAchmemy()
 
 logger = logging.getLogger('ttd')
-file_handler = TimedRotatingFileHandler('/var/log/tuco/ttd.log', when='D')
+file_handler = TimedRotatingFileHandler('/var/log/ttd/ttd.log', when='D')
 file_handler.setLevel(logging.INFO)
 formatter = logging.Formatter('[TTD] %(asctime)s %(levelname)s %(message)s (%(filename)s %(funcName)s l %(lineno)d)')
 file_handler.setFormatter(formatter)
