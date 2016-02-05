@@ -6,22 +6,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from app import ttd
 from config import config as ttdconfig
+from ttdmodel import TtdModel
 
 
-class SqlAchmemy(object):
-
-    def __init__(self):
-        self.Model = declarative_base()
-
-    def init_app(self, app):
-        self.engine = create_engine(app.config['DATABASE_URI'])
-        self.Model.metadata.bind = self.engine
-        DBSession = sessionmaker()
-        DBSession.bind = self.engine
-        self.Session = DBSession()
-
-
-db=SqlAchmemy()
+db=TtdModel()
 
 logger = logging.getLogger('ttd')
 file_handler = TimedRotatingFileHandler('/var/log/tuco/ttd.log', when='D')

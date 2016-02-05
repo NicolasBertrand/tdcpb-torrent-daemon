@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from ttd import db
 from ttd import logger
-from ttd.models import MonitoringRequest, MonitoringStatus
+from ttdmodel import MonitoringRequest, MonitoringStatus
 from ttd.BitTorrentClient import TorrentClient, BTCexception
 
 class ThreadManager(object):

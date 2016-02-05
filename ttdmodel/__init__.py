@@ -12,18 +12,23 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime
 from sqlalchemy import Boolean
 from sqlalchemy.orm import relationship
 
-DB_URL = 'mysql://tdcpb:tdcpb@localhost/tdcpbtorrentsdb'
 
-class SqlAchmemy(object):
-    def __init__(self, db_url):
-        self.engine = create_engine(db_url)
+class TtdModel(object):
+
+    def __init__(self, database_uri = None):
         self.Model = declarative_base()
+
+    def init_app(self, app):
+        if isinstance(app, basestring):
+            self.engine = create_engine(app)
+        else:
+            self.engine = create_engine(app.config['TTD_DATABASE_URL'])
         self.Model.metadata.bind = self.engine
         DBSession = sessionmaker()
         DBSession.bind = self.engine
         self.Session = DBSession()
 
-db=SqlAchmemy(DB_URL)
+db = TtdModel()
 
 class Client(db.Model):
     __tablename__ = u'client'

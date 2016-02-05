@@ -18,7 +18,7 @@ from transmissionrpc import Client as TClient
 
 from ttd import db
 from ttd import logger
-from ttd.models import Client, Torrent
+from ttdmodel import Client, Torrent
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
