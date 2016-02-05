@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from ttd import db
 from ttd import logger
 from ttd.models import MonitoringRequest, MonitoringStatus
-from ttd.BitTorrentClient import TorrentClient
+from ttd.BitTorrentClient import TorrentClient, BTCexception
 
 class ThreadManager(object):
 
@@ -22,12 +22,17 @@ class ThreadManager(object):
 
     def prepare_action(self, ipt, request_type, mstatus):
         if request_type == MonitoringRequest.MRT_START:
-            if mstatus.status != MonitoringStatus.MST_START:
-                if ipt in self.thread_dict:
-                    logger.warning(u'hum, thread not supposed to be already started')
-                    return "ERROR"
-                mstatus.status = MonitoringRequest.MRT_START
+            if ipt in self.thread_dict:
+                logger.warning(u'hum, thread not supposed to be already started')
+                return "ERROR"
+            try :
                 thr = TorrentClient(ipt)
+            except BTCexception as err:
+                logger.warning('Failed start for {}: {}'.format(ipt,err))
+                mstatus.status = MonitoringStatus.MST_FAIL
+                return "ERROR"
+            else:
+                mstatus.status = MonitoringStatus.MST_START
                 thr.start()
                 logger.info("Thread started for {}".format(ipt))
                 self.thread_dict[ipt] = thr
@@ -38,8 +43,21 @@ class ThreadManager(object):
                 self.thread_dict[ipt].stop()
                 self.thread_dict[ipt].join()
                 del self.thread_dict[ipt]
-                mstatus.status = MonitoringRequest.MRT_STOP
+                mstatus.status = MonitoringStatus.STOP
         return "OK"
+
+    def is_thread_stopped(self, local_session):
+        ipt_to_del=[]
+        for ipt,thr in self.thread_dict.iteritems():
+            if thr.stopped():
+                logger.warning(u'{} thread stopped'.format(ipt))
+                thr.join()
+                ipt_to_del.append(ipt)
+                mstatus = local_session.query(MonitoringStatus).\
+                        filter_by(ipt = ipt).first()
+                mstatus.status = MonitoringStatus.MST_FAIL
+        for ipt in ipt_to_del:
+            del self.thread_dict[ipt]
 
 
     def start(self):
@@ -66,6 +84,7 @@ class ThreadManager(object):
                                 ipt= ipt)
                         self.prepare_action(ipt, request_type, new_status)
                         local_session.add(new_status)
+                self.is_thread_stopped(local_session)
                 local_session.commit()
                 self.Session.remove()
                 sleep(2)

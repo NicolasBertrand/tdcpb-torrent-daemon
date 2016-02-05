@@ -7,12 +7,14 @@ import os
 import logging
 import sys
 import json
+import socket
 from threading import Thread, Event
 from time import sleep
 from datetime import datetime
 
 from transmissionrpc import HTTPHandlerError, TransmissionError
 from transmissionrpc import Client as TClient
+
 
 from ttd import db
 from ttd import logger
@@ -87,18 +89,32 @@ class TorrentClient(Thread):
         self.client = local_session.query(Client).filter(Client.ipt == ipt).first()
         Session.remove()
         self.btc = TransmissionClient()
-        self.btc.connect( address  = self.client.ipt,
+        try :
+            self.btc.connect( address  = self.client.ipt,
                  port = 9091,
                  user = self.client.login,
                  password = self.client.password )
-
+        except BTCexception:
+            err = "failed to start {}".format(self.client.ipt)
+            raise BTCexception(err)
     def run(self):
         while True:
             if self._stop.isSet():
                 break
-            torrents= self.btc.get_torrents()
-            self.update_torrent_table(torrents)
-            self.search_deleted_torrents(torrents)
+            try:
+                torrents= self.btc.get_torrents()
+            except HTTPHandlerError as err:
+                logger.error(u'{} {}'.format(self.name, err))
+                self.stop()
+            except TransmissionError as err:
+                logger.error(u'{} {}'.format(self.name, err))
+                self.stop()
+            except socket.timeout as err:
+                logger.error(u'{} socket {}'.format(self.name, err))
+                self.stop()
+            else :
+                self.update_torrent_table(torrents)
+                self.search_deleted_torrents(torrents)
             sleep(10)
 
     def search_hash_in_db(self,torrent_hash, resq):
@@ -144,8 +160,8 @@ class TorrentClient(Thread):
                 if titem.percent_done != _t[u'progress']:
                     titem.percent_done = _t[u'progress']
                     titem.update = datetime.now()
-                    logger.info( "progress: {:<30} {:7.3f}  ".\
-                            format(titem.name[:30], titem.percent_done))
+                    logger.info( "{:>16}: progress: {:<30} {:7.3f}  ".\
+                            format(self.name, titem.name[:30], titem.percent_done))
                 if titem.state != _t[u'status']:
                     titem.state = _t[u'status']
                     titem.update = datetime.now()
@@ -166,7 +182,7 @@ class TorrentClient(Thread):
 
     def stop(self):
         self._stop.set()
-    def stoppped(self):
+    def stopped(self):
         return self._stop.isSet()
 
 

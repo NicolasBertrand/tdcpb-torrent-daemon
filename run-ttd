@@ -5,6 +5,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 from ttd import create_app
 
-app = create_app(basedir) 
+app = create_app(basedir)
 if __name__ == '__main__':
     app.run()
