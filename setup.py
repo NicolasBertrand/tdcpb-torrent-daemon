@@ -5,11 +5,10 @@
 from distutils.core import setup
 
 setup(
-    name         = "tdcpb-torrent-daemon",
-    description  = "Monitor tdcpb torrents ",
+    name         = "ttdmodel",
+    description  = "Tdcpb torrents model databsa ",
     author       = "Nicolas Bertrand",
     author_email = "nicolas.bertrand@tdcpb.org",
     version      = "0.1",
-    scripts      = ["run-ttd"],
-    packages     = ["ttd"],
+    packages     = ["ttdmodel"],
 )
