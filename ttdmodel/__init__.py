@@ -142,6 +142,7 @@ class TorrentRequest(db.Model):
     ipt            = Column(String(16), nullable=False)
     request_type   = Column(String(64), nullable=False)
     request_hash   = Column(String(40))
+    request_name   = Column(String(250))
     request_date   = Column(DateTime, nullable=False)
     request_token  = Column(Boolean)
 
@@ -153,7 +154,7 @@ class TorrentRequest(db.Model):
                 self.request_token)
 
     @classmethod
-    def delete_torrent(cls, p_ipt, p_hash):
+    def delete_torrent_by_hash(cls, p_ipt, p_hash):
         qres = db.Session.query(Torrent,Client).filter(Torrent.hash==p_hash, Client.ipt==p_ipt).first()
         if qres is None:
             print "No torrent found"
@@ -162,6 +163,25 @@ class TorrentRequest(db.Model):
         new_tr= cls(
                 ipt           = p_ipt,
                 request_hash  = p_hash,
+                request_type  = u'REMOVE',
+                request_name  = qres.Torrent.name,
+                request_date  = datetime.now(),
+                request_token = True )
+        db.Session.add(new_tr)
+        db.Session.commit()
+
+    @classmethod
+    def delete_torrent_by_name(cls, p_ipt, p_name):
+        qres = db.Session.query(Torrent,Client).\
+            filter(Torrent.name==p_name, Client.ipt==p_ipt).first()
+        if qres is None:
+            print "No torrent found"
+            return
+        print "Torrent {} found in {}".format(qres.Torrent.name, qres.Client)
+        new_tr= cls(
+                ipt           = p_ipt,
+                request_hash  = qres.Torrent.hash,
+                request_name  = p_name,
                 request_type  = u'REMOVE',
                 request_date  = datetime.now(),
                 request_token = True )

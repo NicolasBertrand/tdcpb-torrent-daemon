@@ -130,7 +130,7 @@ class TorrentClient(Thread):
                 self.btc.remove(request.request_hash)
                 request.request_token = False
                 logger.info(u"Torrent {} deleted in {}".\
-                        format(request.request_hash, request.ipt)
+                        format(request.request_name, request.ipt)
                         )
         Session.commit()
         Session.remove()
