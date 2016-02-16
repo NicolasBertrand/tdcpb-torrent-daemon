@@ -18,7 +18,7 @@ from transmissionrpc import Client as TClient
 
 from ttd import db
 from ttd import logger
-from ttdmodel import Client, Torrent
+from ttdmodel import Client, Torrent, TorrentRequest
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
@@ -44,7 +44,7 @@ class BitTorrentClient(object):
         pass
     def add_torrent(self, torrent_path):
         pass
-    def del_torrent(self, torrent_name):
+    def remove(self, torrent_name):
         pass
 
 class TransmissionClient(BitTorrentClient):
@@ -74,8 +74,8 @@ class TransmissionClient(BitTorrentClient):
         return self.dict_client
     def add_torrent(self, torrent_path):
         pass
-    def del_torrent(self, torrent_name):
-        pass
+    def remove(self, torrent_hash):
+        self.client.remove(torrent_hash)
 
 class TorrentClient(Thread):
     def __init__(self, ipt):
@@ -115,7 +115,25 @@ class TorrentClient(Thread):
             else :
                 self.update_torrent_table(torrents)
                 self.search_deleted_torrents(torrents)
+                self.torrent_requests()
             sleep(10)
+
+    def torrent_requests(self):
+        session_factory = sessionmaker(bind=db.engine)
+        Session = scoped_session(session_factory)
+        local_session = Session()
+        new_requests = local_session.query(TorrentRequest).\
+                filter_by(request_token = True).all()
+        for request in new_requests:
+            logger.info("New request {}".format(request))
+            if request.request_type == u'REMOVE':
+                self.btc.remove(request.request_hash)
+                request.request_token = False
+                logger.info(u"Torrent {} deleted in {}".\
+                        format(request.request_hash, request.ipt)
+                        )
+        Session.commit()
+        Session.remove()
 
     def search_hash_in_db(self,torrent_hash, resq):
         for r in resq:

@@ -38,6 +38,10 @@ class Client(db.Model):
     password       = Column(String(64), nullable=False)
     client_type    = Column(String(64), nullable=False)
 
+    def __repr__(self):
+        return u'{}'.format(self.ipt)
+
+
 class Torrent(db.Model):
     __tablename__ = u'torrent'
     id             = Column(Integer, primary_key=True)
@@ -95,6 +99,7 @@ class MonitoringRequest(db.Model):
             db.Session.add(new_mr)
         db.Session.commit()
 
+
     @classmethod
     def stop_client(cls, ipt):
         qres = db.Session.query(cls).\
@@ -130,3 +135,35 @@ class MonitoringStatus(db.Model):
                 self.ipt,
                 self.status)
 
+class TorrentRequest(db.Model):
+    __tablename__ = u'torrentrequest'
+
+    id             = Column(Integer, primary_key=True)
+    ipt            = Column(String(16), nullable=False)
+    request_type   = Column(String(64), nullable=False)
+    request_hash   = Column(String(40))
+    request_date   = Column(DateTime, nullable=False)
+    request_token  = Column(Boolean)
+
+    def __repr__(self):
+        return u'{} {:<16} {} ({})'.format(\
+                self.request_date,
+                self.ipt,
+                self.request_type,
+                self.request_token)
+
+    @classmethod
+    def delete_torrent(cls, p_ipt, p_hash):
+        qres = db.Session.query(Torrent,Client).filter(Torrent.hash==p_hash, Client.ipt==p_ipt).first()
+        if qres is None:
+            print "No torrent found"
+            return
+        print "Torrent {} found in {}".format(qres.Torrent.name, qres.Client)
+        new_tr= cls(
+                ipt           = p_ipt,
+                request_hash  = p_hash,
+                request_type  = u'REMOVE',
+                request_date  = datetime.now(),
+                request_token = True )
+        db.Session.add(new_tr)
+        db.Session.commit()

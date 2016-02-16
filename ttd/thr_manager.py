@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from ttd import db
 from ttd import logger
-from ttdmodel import MonitoringRequest, MonitoringStatus
+from ttdmodel import MonitoringRequest, MonitoringStatus, TorrentRequest
 from ttd.BitTorrentClient import TorrentClient, BTCexception
 
 class ThreadManager(object):
@@ -59,6 +59,12 @@ class ThreadManager(object):
         for ipt in ipt_to_del:
             del self.thread_dict[ipt]
 
+    def torrent_requests(self, local_session):
+        new_requests = local_session.query(TorrentRequest).\
+                filter_by(request_token = True).all()
+        for request in new_requests:
+            #logger.info("New request {}".format(request))
+            pass
 
     def start(self):
         logger.info("Starting thread moniroring")
@@ -85,6 +91,7 @@ class ThreadManager(object):
                         self.prepare_action(ipt, request_type, new_status)
                         local_session.add(new_status)
                 self.is_thread_stopped(local_session)
+                self.torrent_requests(local_session)
                 local_session.commit()
                 self.Session.remove()
                 sleep(2)
