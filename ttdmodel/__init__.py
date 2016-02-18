@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime
-from sqlalchemy import Boolean
+from sqlalchemy import Boolean, BigInteger
 from sqlalchemy.orm import relationship
 
 
@@ -50,6 +50,11 @@ class Torrent(db.Model):
     state          = Column(String(40))
     percent_done   = Column(Float)
     update         = Column(DateTime, nullable=False)
+    date_active    = Column(DateTime)
+    date_added     = Column(DateTime)
+    date_started   = Column(DateTime)
+    date_done      = Column(DateTime)
+    eta            = Column(BigInteger)
     client_id      = Column(Integer, ForeignKey(u'client.id'))
     client         = relationship(Client)
 

@@ -11,6 +11,7 @@ import socket
 from threading import Thread, Event
 from time import sleep
 from datetime import datetime
+from datetime import timedelta
 
 from transmissionrpc import HTTPHandlerError, TransmissionError
 from transmissionrpc import Client as TClient
@@ -64,13 +65,25 @@ class TransmissionClient(BitTorrentClient):
         tr_torrents = self.client.get_torrents()
         self.dict_client['torrents']= []
         for _torrent in tr_torrents:
-            _torrent = {
-            u'dcpname'    : _torrent.name,
-            u'hash'    : _torrent.hashString,
-            u'progress': _torrent.progress,
-            u'status'  : _torrent.status
+            _torrent_dict = {
+            u'name'         : _torrent.name,
+            u'hash'         : _torrent.hashString,
+            u'progress'     : _torrent.progress,
+            u'status'       : _torrent.status,
+            u'date_active'  : _torrent.date_active,
+            u'date_added'   : _torrent.date_added,
+            u'date_started' : _torrent.date_started,
+            u'date_done'    : _torrent.date_done,
+            u'eta'          : -1,
+
             }
-            self.dict_client['torrents'].append(_torrent)
+            #TODO: Warning eta can return exception ValuerError
+
+            try:
+               _torrent_dict[ u'eta']          = timedelta.total_seconds(_torrent.eta)
+            except ValueError:
+                pass
+            self.dict_client['torrents'].append(_torrent_dict)
         return self.dict_client
     def add_torrent(self, torrent_path):
         pass
@@ -165,33 +178,49 @@ class TorrentClient(Thread):
 
         Session.remove()
 
+
+
+    def update_torrent_fields(self):
+        if self.resq.state != self._t[u'status']:
+            self.resq.state = self._t[u'status']
+        if self.resq.percent_done != self._t[u'progress']:
+            self.resq.percent_done = self._t[u'progress']
+        if self.resq.date_active != self._t[u'date_active']:
+            self.resq.date_active = self._t[u'date_active']
+        if self.resq.date_added != self._t[u'date_added']:
+            self.resq.date_added = self._t[u'date_added']
+        if self.resq.date_started != self._t[u'date_started']:
+            self.resq.date_started = self._t[u'date_started']
+        if self.resq.date_done != self._t[u'date_done']:
+            self.resq.date_done = self._t[u'date_done']
+        if self.resq.eta != self._t[u'eta']:
+            self.resq.eta = self._t[u'eta']
+
+
     def update_torrent_table(self, torrents):
+
         session_factory = sessionmaker(bind=db.engine)
         Session = scoped_session(session_factory)
         local_session = Session()
         for _t in torrents['torrents']:
             _client= local_session.query(Client).filter(Client.ipt == self.name).first()
-            resq = local_session.query(Torrent).\
-                    filter(Torrent.client == _client).all()
-            titem = self.search_hash_in_db(_t['hash'], resq)
-            if titem is not None:
-                if titem.percent_done != _t[u'progress']:
-                    titem.percent_done = _t[u'progress']
-                    titem.update = datetime.now()
-                    logger.info( "{:>16}: progress: {:<30} {:7.3f}  ".\
-                            format(self.name, titem.name[:30], titem.percent_done))
-                if titem.state != _t[u'status']:
-                    titem.state = _t[u'status']
-                    titem.update = datetime.now()
-                    logger.info("state updated {} {}  ".\
-                            format(titem.state, _t[u'status']))
+            self.resq = local_session.query(Torrent).\
+                    filter(Torrent.client == _client, Torrent.hash == _t['hash']).first()
+            if self.resq is not None:
+                self._t = _t
+                self.update_torrent_fields()
                 local_session.commit()
             else:
                 new_torrent = Torrent(
-                    name         = _t[u'dcpname'],
+                    name         = _t[u'name'],
                     hash         = _t[u'hash'],
                     state        = _t[u'status'],
                     percent_done = _t[u'progress'],
+                    date_active  = _t[u'date_active'],
+                    date_added   = _t[u'date_added'],
+                    date_started = _t[u'date_started'],
+                    date_done    = _t[u'date_done'],
+                    eta          = _t[u'eta'],
                     update       = datetime.now(),
                     client       = _client )
                 local_session.add(new_torrent)
