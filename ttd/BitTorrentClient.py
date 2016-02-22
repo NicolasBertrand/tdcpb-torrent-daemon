@@ -88,7 +88,10 @@ class TransmissionClient(BitTorrentClient):
     def add_torrent(self, torrent_path):
         pass
     def remove(self, torrent_hash):
-        self.client.remove(torrent_hash)
+        self.client.remove_torrent(torrent_hash)
+
+    def verify(self, torrent_hash):
+        self.client.verify_torrent(torrent_hash)
 
 class TorrentClient(Thread):
     def __init__(self, ipt):
@@ -145,6 +148,14 @@ class TorrentClient(Thread):
                 logger.info(u"Torrent {} deleted in {}".\
                         format(request.request_name, request.ipt)
                         )
+            if request.request_type == u'VERIFY':
+                self.btc.verify(request.request_hash)
+                request.request_token = False
+                logger.info(u"Torrent {} verification started in {}".\
+                        format(request.request_name, request.ipt)
+                        )
+
+
         Session.commit()
         Session.remove()
 

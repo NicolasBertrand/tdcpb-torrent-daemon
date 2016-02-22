@@ -192,3 +192,21 @@ class TorrentRequest(db.Model):
                 request_token = True )
         db.Session.add(new_tr)
         db.Session.commit()
+
+    @classmethod
+    def verify_torrent_by_hash(cls, p_ipt, p_hash):
+        qres = db.Session.query(Torrent,Client).\
+                filter(Torrent.hash==p_hash, Client.ipt==p_ipt).first()
+        if qres is None:
+            print "No torrent found"
+            return
+        print "Torrent {} found in {}".format(qres.Torrent.name, qres.Client)
+        new_tr= cls(
+                ipt           = p_ipt,
+                request_hash  = p_hash,
+                request_type  = u'VERIFY',
+                request_name  = qres.Torrent.name,
+                request_date  = datetime.now(),
+                request_token = True )
+        db.Session.add(new_tr)
+        db.Session.commit()
