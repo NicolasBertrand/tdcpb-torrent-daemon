@@ -75,7 +75,8 @@ class TransmissionClient(BitTorrentClient):
             u'date_started' : _torrent.date_started,
             u'date_done'    : _torrent.date_done,
             u'eta'          : -1,
-
+            u'error'        : _torrent.error,
+            u'errorString'  : _torrent.errorString[:350],
             }
             #TODO: Warning eta can return exception ValuerError
 
@@ -84,12 +85,16 @@ class TransmissionClient(BitTorrentClient):
             except ValueError:
                 pass
             self.dict_client['torrents'].append(_torrent_dict)
+            if _torrent_dict[u'error'] == 3:
+                _torrent_dict[u'status'] = u'error_torrentclient'
+            if _torrent_dict[u'error'] in [1,2]:
+                _torrent_dict[u'status'] = u'error_torrenttracker'
+
         return self.dict_client
     def add_torrent(self, torrent_path):
         pass
     def remove(self, torrent_hash):
         self.client.remove_torrent(torrent_hash)
-
     def verify(self, torrent_hash):
         self.client.verify_torrent(torrent_hash)
 
@@ -206,7 +211,10 @@ class TorrentClient(Thread):
             self.resq.date_done = self._t[u'date_done']
         if self.resq.eta != self._t[u'eta']:
             self.resq.eta = self._t[u'eta']
-
+        if self.resq.error != self._t[u'error']:
+            self.resq.error = self._t[u'error']
+        if self.resq.errorString != self._t[u'errorString']:
+            self.resq.errorString = self._t[u'errorString']
 
     def update_torrent_table(self, torrents):
 
@@ -232,6 +240,8 @@ class TorrentClient(Thread):
                     date_started = _t[u'date_started'],
                     date_done    = _t[u'date_done'],
                     eta          = _t[u'eta'],
+                    error        = _t[u'error'],
+                    errorString  = _t[u'errorString'],
                     update       = datetime.now(),
                     client       = _client )
                 local_session.add(new_torrent)

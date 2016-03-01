@@ -55,6 +55,8 @@ class Torrent(db.Model):
     date_started   = Column(DateTime)
     date_done      = Column(DateTime)
     eta            = Column(BigInteger)
+    error          = Column(Integer)
+    errorString    = Column(String(250))
     client_id      = Column(Integer, ForeignKey(u'client.id'))
     client         = relationship(Client)
 
