@@ -57,9 +57,11 @@ class TransmissionClient(BitTorrentClient):
         try :
            self.client =TClient( address, port, user, password)
         except TransmissionError as err:
-            raise BTCexception("TransmissionError {}".format(err))
-
-        self.dict_client['name']= address
+            raise BTCexception(" {} TransmissionError {}".format(address, err))
+        except socket.timeout as err:
+            raise BTCexception( " {} Socket error {}".format( address,  err))
+        else:
+            self.dict_client['name']= address
 
     def get_torrents(self):
         tr_torrents = self.client.get_torrents()
@@ -137,9 +139,10 @@ class TorrentClient(Thread):
                 self.update_torrent_table(torrents)
                 self.search_deleted_torrents(torrents)
                 self.torrent_requests()
-            sleep(10)
+            sleep(2)
 
     def torrent_requests(self):
+
         session_factory = sessionmaker(bind=db.engine)
         Session = scoped_session(session_factory)
         local_session = Session()
@@ -199,22 +202,31 @@ class TorrentClient(Thread):
     def update_torrent_fields(self):
         if self.resq.state != self._t[u'status']:
             self.resq.state = self._t[u'status']
+            self.resq.update = datetime.now()
         if self.resq.percent_done != self._t[u'progress']:
             self.resq.percent_done = self._t[u'progress']
+            self.resq.update = datetime.now()
         if self.resq.date_active != self._t[u'date_active']:
             self.resq.date_active = self._t[u'date_active']
+            self.resq.update = datetime.now()
         if self.resq.date_added != self._t[u'date_added']:
             self.resq.date_added = self._t[u'date_added']
+            self.resq.update = datetime.now()
         if self.resq.date_started != self._t[u'date_started']:
             self.resq.date_started = self._t[u'date_started']
+            self.resq.update = datetime.now()
         if self.resq.date_done != self._t[u'date_done']:
             self.resq.date_done = self._t[u'date_done']
+            self.resq.update = datetime.now()
         if self.resq.eta != self._t[u'eta']:
             self.resq.eta = self._t[u'eta']
+            self.resq.update = datetime.now()
         if self.resq.error != self._t[u'error']:
             self.resq.error = self._t[u'error']
+            self.resq.update = datetime.now()
         if self.resq.errorString != self._t[u'errorString']:
             self.resq.errorString = self._t[u'errorString']
+            self.resq.update = datetime.now()
 
     def update_torrent_table(self, torrents):
 
