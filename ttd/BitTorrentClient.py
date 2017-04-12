@@ -47,6 +47,8 @@ class BitTorrentClient(object):
         pass
     def remove(self, torrent_name):
         pass
+    def free_space_bytes(self):
+        pass
 
 class TransmissionClient(BitTorrentClient):
     def __init__(self):
@@ -99,6 +101,18 @@ class TransmissionClient(BitTorrentClient):
         self.client.remove_torrent(torrent_hash)
     def verify(self, torrent_hash):
         self.client.verify_torrent(torrent_hash)
+    def free_space_bytes(self):
+        free_space = None
+        try:
+            session = self.client.get_session()
+        except TransmissionError as err:
+            raise BTCexception(" {} TransmissionError {}".format(self.dict_client['name'], err))
+        except socket.timeout as err:
+            raise BTCexception( " {} Socket error {}".format( self.dict_client['name'],  err))
+        else:
+            free_space = session.download_dir_free_space
+        return free_space
+
 
 class TorrentClient(Thread):
     def __init__(self, ipt):
@@ -139,6 +153,7 @@ class TorrentClient(Thread):
                 self.update_torrent_table(torrents)
                 self.search_deleted_torrents(torrents)
                 self.torrent_requests()
+                self.update_freespace()
             sleep(2)
 
     def torrent_requests(self):
@@ -259,6 +274,18 @@ class TorrentClient(Thread):
                 local_session.add(new_torrent)
                 local_session.commit()
         Session.remove()
+
+    def update_freespace(self):
+        session_factory = sessionmaker(bind=db.engine)
+        Session = scoped_session(session_factory)
+        local_session = Session()
+        _client= local_session.query(Client).filter(Client.ipt == self.name).first()
+        _client.free_space = self.btc.free_space_bytes()
+        local_session.commit()
+        Session.remove()
+
+
+
 
     def stop(self):
         self._stop.set()

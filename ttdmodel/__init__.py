@@ -37,6 +37,7 @@ class Client(db.Model):
     login          = Column(String(64), nullable=False)
     password       = Column(String(64), nullable=False)
     client_type    = Column(String(64), nullable=False)
+    free_space     = Column(BigInteger)
 
     def __repr__(self):
         return u'{}'.format(self.ipt)
