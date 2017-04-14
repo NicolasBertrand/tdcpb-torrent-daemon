@@ -132,11 +132,16 @@ class MonitoringStatus(db.Model):
     MST_START = u'STARTED'
     MST_STOP  = u'STOPPPED'
     MST_FAIL  = u'FAILED'
+    MST_FAIL_STOP  = u'FAIL_STOP'
 
     __tablename__ = u'monitoringstatus'
     id            = Column(Integer, primary_key=True)
     ipt           = Column(String(16), nullable=False,)
     status        = Column(String(64), nullable=False, default=u'STOP')
+    fail_date     = Column(DateTime)
+    fail_count    = Column(Integer, default=0)
+    start_date    = Column(DateTime)
+    stop_date     = Column(DateTime)
 
     def __repr__(self):
         return u'{:<16} {}'.format(\

@@ -1,4 +1,3 @@
-
 from fconfig import Config as FConfig
 
 class ttd(object):

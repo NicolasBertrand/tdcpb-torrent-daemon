@@ -30,6 +30,9 @@ CLIENT_TYPE = [
         TRANSMISSION_CLIENT,
         DELUGE_CLIENT]
 
+
+THREAD_LOOP_SLEEP = 20
+
 class BTCexception(Exception):
     def __init__(self, value):
         self.value = value
@@ -109,6 +112,8 @@ class TransmissionClient(BitTorrentClient):
             raise BTCexception(" {} TransmissionError {}".format(self.dict_client['name'], err))
         except socket.timeout as err:
             raise BTCexception( " {} Socket error {}".format( self.dict_client['name'],  err))
+        except Exception as err:
+            raise BTCexception( "{}: {}".format( self.dict_client['name'],  err.message))
         else:
             free_space = session.download_dir_free_space
         return free_space
@@ -120,12 +125,13 @@ class TorrentClient(Thread):
         self._stop = Event()
         self.daemon = True
         self.name = ipt
-        session_factory = sessionmaker(bind=db.engine)
-        Session = scoped_session(session_factory)
+        self.session_factory = sessionmaker(bind=db.engine)
+        Session = scoped_session(self.session_factory)
         local_session = Session()
         self.client = local_session.query(Client).filter(Client.ipt == ipt).first()
         Session.remove()
         self.btc = TransmissionClient()
+        logger.debug(u'{}: starting thread'.format(self.name))
         try :
             self.btc.connect( address  = self.client.ipt,
                  port = 9091,
@@ -153,13 +159,18 @@ class TorrentClient(Thread):
                 self.update_torrent_table(torrents)
                 self.search_deleted_torrents(torrents)
                 self.torrent_requests()
+
+            try:
                 self.update_freespace()
-            sleep(2)
+            except BTCexception as err:
+                logger.error(u'{} socket {}'.format(self.name, err))
+                self.stop()
+
+            sleep(THREAD_LOOP_SLEEP)
 
     def torrent_requests(self):
 
-        session_factory = sessionmaker(bind=db.engine)
-        Session = scoped_session(session_factory)
+        Session = scoped_session(self.session_factory)
         local_session = Session()
         new_requests = local_session.query(TorrentRequest).\
                 filter_by(request_token = True).all()
@@ -179,7 +190,7 @@ class TorrentClient(Thread):
                         )
 
 
-        Session.commit()
+        local_session.commit()
         Session.remove()
 
     def search_hash_in_db(self,torrent_hash, resq):
@@ -196,8 +207,7 @@ class TorrentClient(Thread):
 
 
     def search_deleted_torrents(self,torrents):
-        session_factory = sessionmaker(bind=db.engine)
-        Session = scoped_session(session_factory)
+        Session = scoped_session(self.session_factory)
         local_session = Session()
 
         _client= local_session.query(Client).filter(Client.ipt == self.name).first()
@@ -223,7 +233,8 @@ class TorrentClient(Thread):
             self.resq.update = datetime.now()
         if self.resq.date_active != self._t[u'date_active']:
             self.resq.date_active = self._t[u'date_active']
-            self.resq.update = datetime.now()
+            # no date update for change in torrent activity
+            # date_active is updated wheh torrent is in seed
         if self.resq.date_added != self._t[u'date_added']:
             self.resq.date_added = self._t[u'date_added']
             self.resq.update = datetime.now()
@@ -244,9 +255,7 @@ class TorrentClient(Thread):
             self.resq.update = datetime.now()
 
     def update_torrent_table(self, torrents):
-
-        session_factory = sessionmaker(bind=db.engine)
-        Session = scoped_session(session_factory)
+        Session = scoped_session(self.session_factory)
         local_session = Session()
         for _t in torrents['torrents']:
             _client= local_session.query(Client).filter(Client.ipt == self.name).first()
@@ -276,8 +285,7 @@ class TorrentClient(Thread):
         Session.remove()
 
     def update_freespace(self):
-        session_factory = sessionmaker(bind=db.engine)
-        Session = scoped_session(session_factory)
+        Session = scoped_session(self.session_factory)
         local_session = Session()
         _client= local_session.query(Client).filter(Client.ipt == self.name).first()
         _client.free_space = self.btc.free_space_bytes()

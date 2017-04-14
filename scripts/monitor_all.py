@@ -1,8 +1,8 @@
 import sys
+sys.path.append('.')
 import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0,"/var/lib/tdcpb-torrents/tdcpb-torrent-daemon")
 
 if os.path.exists('.env'):
     print('Importing environment from .env...')
