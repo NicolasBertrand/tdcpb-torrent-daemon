@@ -175,10 +175,11 @@ class ThreadManager(object):
                     self.db.Session.commit()
 
                 self.torrent_requests(self.db.Session)
+                self.is_thread_stopped(self.db.Session)
                 self.db.Session.commit()
 
                 delay = datetime.now() - delay
-                logger.info('Duration main loop = {}'.format(delay))
+                logger.debug('Duration main loop = {}'.format(delay))
         except KeyboardInterrupt:
             for _t in self.thread_dict.itervalues():
                 _t.stop()

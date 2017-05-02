@@ -167,6 +167,7 @@ class TorrentClient(Thread):
                 self.stop()
 
             sleep(THREAD_LOOP_SLEEP)
+        logger.info("{}: End of thread". self.name)
 
     def torrent_requests(self):
 
@@ -291,8 +292,6 @@ class TorrentClient(Thread):
         _client.free_space = self.btc.free_space_bytes()
         local_session.commit()
         Session.remove()
-
-
 
 
     def stop(self):
