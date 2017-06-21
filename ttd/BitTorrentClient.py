@@ -167,7 +167,7 @@ class TorrentClient(Thread):
                 self.stop()
 
             sleep(THREAD_LOOP_SLEEP)
-        logger.info("{}: End of thread". self.name)
+        logger.info("{}: End of thread".format(self.name))
 
     def torrent_requests(self):
 
